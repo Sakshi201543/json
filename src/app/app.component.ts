@@ -1,37 +1,41 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Subscription } from 'rxjs';
+
+import { DataAccessService } from './data-access.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit{
+export class AppComponent implements OnInit, OnDestroy{
 
-  private jsonData: Array<object> = [];
+  private sub: Subscription;
+  private jsonData = [];
   private i: number = 1;
+  private j: number = 0;
   private rowClicked: boolean = false;
   private clickedUser: object;
 
-  constructor(private http: HttpClient){}
+  constructor(private http: HttpClient,
+              private dataAccessService: DataAccessService){}
   
   ngOnInit(){
-    this.http.get('https://jsonplaceholder.typicode.com/users?_limit=1')
-    .subscribe(
-      (data: Array<object>) => {
-        this.jsonData = data;
-      });
-
-    // Hit api after every 10 seconds
-    setInterval(() => this.http.get('https://jsonplaceholder.typicode.com/users?_limit='+this.i++)
-    .subscribe(
-      (data: Array<object>) => {
-        this.jsonData = data;
-      }), 10000);
+    this.sub = this.dataAccessService.getJsonData().subscribe((data: []) => {
+                this.j++;
+                console.log(data);
+                this.jsonData = data;
+                }
+              );
   }
 
   onClick(data){
     this.rowClicked = true;
     this.clickedUser = data;
+  }
+
+  ngOnDestroy(){
+    this.sub.unsubscribe();
   }
 }
